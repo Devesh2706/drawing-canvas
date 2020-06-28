@@ -1,44 +1,73 @@
-var canvas, backgroundImage;
+var drawingball, i;
+var database, pos, piece, button;
 
-var gameState = 0;
-var playerCount;
-var allPlayers;
-var distance = 0;
-var database;
-
-var form, player, game;
-
-var cars, car1, car2, car3, car4;
-
-var track, car1_img, car2_img, car3_img, car4_img;
-
-function preload(){
-  track = loadImage("../images/track.jpg");
-  car1_img = loadImage("../images/car1.png");
-  car2_img = loadImage("../images/car2.png");
-  car3_img = loadImage("../images/car3.png");
-  car4_img = loadImage("../images/car4.png");
-  ground = loadImage("../images/ground.png");
-}
+var trajectory=[];
 
 function setup(){
-  canvas = createCanvas(displayWidth - 20, displayHeight-30);
-  database = firebase.database();
-  game = new Game();
-  game.getState();
-  game.start();
+    createCanvas(4000,4000);
+
+    database=firebase.database();
+
+    piece=loadImage("piece.png");
+
+    button=createButton("clearAll");
+    
+
+    drawingball = createSprite(250,250,10,10);
+    drawingball.shapeColor = "red";
+
+    database.ref("drawingball/position").on("value",readPos, showErr);
 }
 
-
 function draw(){
-  if(playerCount === 4){
-    game.update(1);
-  }
-  if(gameState === 1){
-    clear();
-    game.play();
-  }
-  if(gameState === 2){
-    game.end();
-  }
+    background("white");
+    drawSprites();
+
+    var position = [drawingball.x, drawingball.y];
+    trajectory.push(position);
+
+
+    for(i=0; i<trajectory.length; i++){
+        image(piece, trajectory[i][0], trajectory[i][1]);
+    }
+
+    button.mousePressed(function(){
+        trajectory=[];
+    });
+
+    database.ref("drawingball").set({
+        drawings:trajectory
+    })
+
+    
+}
+
+function changePosition(){
+    database.ref("drawingball/position").set({
+        x:trajectory[i][0],
+        y:trajectory[i][1]
+    })
+}
+
+function mouseDragged(){
+    drawingball.x=mouseX;
+    drawingball.y=mouseY;
+
+    database.ref("drawingball/position").set({
+        x:mouseX,
+        y:mouseY
+    })
+}
+
+function mouseReleased(){
+}
+
+function readPos(data){
+    pos=data.val();
+    drawingball.x=pos.x;
+    drawingball.y=pos.y;
+}
+
+function showErr(){
+    console.log("Error OOCCUURREEDD");
 }
